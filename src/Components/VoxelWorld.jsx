@@ -12,7 +12,7 @@ const VoxelGame = () => {
   document.body.appendChild(stats.dom);
 
   // Generate 3D array for voxels
-  const { voxelData, isVoxelSurrounded } = useVoxelWorld(50, 50, 50);
+  const { voxelData, isVoxelSurrounded } = useVoxelWorld(100, 100, 100);
   // Initialize Three.js scene, camera, and renderer
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
@@ -30,7 +30,7 @@ const VoxelGame = () => {
 
   document.body.appendChild(renderer.domElement);
   const controls = new OrbitControls(camera, renderer.domElement);
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
   scene.add(ambientLight);
 
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
@@ -39,29 +39,60 @@ const VoxelGame = () => {
   scene.add(directionalLight);
 
   const voxelSize = 0.1; // Size of your smaller cubes
-  const geometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
+  const cubeGeometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
+  const instancedGeometry = new THREE.InstancedBufferGeometry();
+  instancedGeometry.copy(cubeGeometry);
+
+  const positions = new THREE.InstancedBufferAttribute(
+    new Float32Array(voxelData.length * 3),
+    3
+  );
+  instancedGeometry.setAttribute("positions", positions);
+  let voxelInstanceList = [];
+  var dummy = new THREE.Object3D();
 
   for (let x = 0; x < voxelData.length; x++) {
     for (let y = 0; y < voxelData[0].length; y++) {
       for (let z = 0; z < voxelData[0][0].length; z++) {
         if (voxelData[x][y][z] && !isVoxelSurrounded(x, y, z, voxelData)) {
-          // Adjust the threshold for voxel existence
-
-          const material = new THREE.MeshStandardMaterial({
-            map: grassTexture,
-          });
-          material.receiveShadows = true;
-          const voxel = new THREE.Mesh(geometry, material);
-          voxel.position.set(x * voxelSize, y * voxelSize, z * voxelSize);
-          scene.add(voxel);
+          voxelInstanceList.push([x, y, z]);
         }
       }
     }
   }
+
+  const material = new THREE.MeshStandardMaterial({
+    map: grassTexture,
+  });
+  material.receiveShadows = true;
+
+  const instancedMesh = new THREE.InstancedMesh(
+    instancedGeometry,
+    material,
+    voxelInstanceList.length
+  );
+
+  function setInstancedMeshPositions(mesh) {
+    for (var i = 0; i < mesh.count; i++) {
+      // we add 200 units of distance (the width of the section) between each.
+      dummy.position.set(
+        voxelInstanceList[i][0] * voxelSize,
+        voxelInstanceList[i][1] * voxelSize,
+        voxelInstanceList[i][2] * voxelSize
+      );
+      dummy.updateMatrix();
+
+      mesh.setMatrixAt(i, dummy.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+
+  setInstancedMeshPositions(instancedMesh);
+  scene.add(instancedMesh);
   // Set up the camera position and controls
-  camera.position.x = -5;
-  camera.position.y = 10;
-  camera.position.z = 5;
+  camera.position.x = -1.9;
+  camera.position.y = 6.1;
+  camera.position.z = 4.8;
 
   const canvas = renderer.domElement;
   canvas.style.top = "0px";

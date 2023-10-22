@@ -3,7 +3,10 @@ import Noise from "noisejs";
 function useVoxelWorld(worldSizeX, worldSizeY, worldSizeZ) {
     // Initialize the noise generator
     const noise = new Noise.Noise();
-
+    const frequency = 0.02;
+    const amplitude = 30;
+    const lacunarity = 2;
+    const octaves = 5;
     // Set up a 3D array to store voxel data
 
     const voxelData = new Array(worldSizeX);
@@ -14,8 +17,10 @@ function useVoxelWorld(worldSizeX, worldSizeY, worldSizeZ) {
             voxelData[x][y] = new Array(worldSizeZ);
             for (let z = 0; z < worldSizeZ; z++) {
                 // Use Simplex noise to determine if a voxel should exist at this position
-                const noiseValue = noise.simplex3(x / 10, y / 10, z / 10); // Adjust the parameters as needed
-                if (noiseValue > 0.02) {
+                const noiseValue = noise.simplex3(x * frequency, y * frequency, z * frequency); // Adjust the parameters as needed
+                const terrainHeight = Math.floor(noiseValue * amplitude);
+
+                if (y <= terrainHeight || y < 2) {
                     voxelData[x][y][z] = 1;
                 } else {
                     voxelData[x][y][z] = 0;
