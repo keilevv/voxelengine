@@ -39,20 +39,13 @@ const VoxelGame = () => {
   scene.add(directionalLight);
 
   const voxelSize = 0.1; // Size of your smaller cubes
-  const geometry = new THREE.BoxGeometry(
-    voxelSize,
-    voxelSize,
-    voxelSize
-  );
-  const instancedGeometry = new THREE.InstancedBufferGeometry();
+  const geometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
 
   for (let x = 0; x < voxelData.length; x++) {
     for (let y = 0; y < voxelData[0].length; y++) {
       for (let z = 0; z < voxelData[0][0].length; z++) {
         if (voxelData[x][y][z] && !isVoxelSurrounded(x, y, z, voxelData)) {
           // Adjust the threshold for voxel existence
-
-          const instancedGeometry = new THREE.InstancedBufferGeometry();
 
           const material = new THREE.MeshStandardMaterial({
             map: grassTexture,
