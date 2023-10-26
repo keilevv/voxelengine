@@ -12,11 +12,7 @@ const VoxelGame = () => {
   document.body.appendChild(stats.dom);
 
   // Generate 3D array for voxels
-  const { voxelData, voxelDataList, isVoxelSurrounded } = useVoxelWorld(
-    100,
-    100,
-    100
-  );
+  const { voxelData, isVoxelSurrounded } = useVoxelWorld(100, 100, 100);
   // Initialize Three.js scene, camera, and renderer
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
@@ -52,26 +48,40 @@ const VoxelGame = () => {
     3
   );
   instancedGeometry.setAttribute("positions", positions);
+  let voxelInstanceList = [];
   var dummy = new THREE.Object3D();
+
+  for (let x = 0; x < voxelData.length; x++) {
+    for (let y = 0; y < voxelData[0].length; y++) {
+      for (let z = 0; z < voxelData[0][0].length; z++) {
+        if (voxelData[x][y][z] && !isVoxelSurrounded(x, y, z, voxelData)) {
+          voxelInstanceList.push([x, y, z]);
+        }
+      }
+    }
+  }
+
+  const material = new THREE.MeshStandardMaterial({
+    map: grassTexture,
+  });
+  material.receiveShadows = true;
 
   const instancedMesh = new THREE.InstancedMesh(
     instancedGeometry,
-    null,
-    voxelDataList.length
+    material,
+    voxelInstanceList.length
   );
 
   function setInstancedMeshPositions(mesh) {
     for (var i = 0; i < mesh.count; i++) {
       // we add 200 units of distance (the width of the section) between each.
       dummy.position.set(
-        voxelDataList[i].position.x * voxelSize,
-        voxelDataList[i].position.y * voxelSize,
-        voxelDataList[i].position.z * voxelSize
+        voxelInstanceList[i][0] * voxelSize,
+        voxelInstanceList[i][1] * voxelSize,
+        voxelInstanceList[i][2] * voxelSize
       );
       dummy.updateMatrix();
-      mesh.material = new THREE.MeshStandardMaterial({
-        color: voxelDataList[i].color,
-      });
+
       mesh.setMatrixAt(i, dummy.matrix);
     }
     mesh.instanceMatrix.needsUpdate = true;
