@@ -12,7 +12,11 @@ const VoxelGame = () => {
   document.body.appendChild(stats.dom);
 
   // Generate 3D array for voxels
-  const { voxelData, isVoxelSurrounded } = useVoxelWorld(100, 100, 100);
+  const { voxelData, isVoxelSurrounded, blockTypes } = useVoxelWorld(
+    100,
+    100,
+    100
+  );
   // Initialize Three.js scene, camera, and renderer
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
@@ -40,14 +44,7 @@ const VoxelGame = () => {
 
   const voxelSize = 0.1; // Size of your smaller cubes
   const cubeGeometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
-  const instancedGeometry = new THREE.InstancedBufferGeometry();
-  instancedGeometry.copy(cubeGeometry);
 
-  const positions = new THREE.InstancedBufferAttribute(
-    new Float32Array(voxelData.length * 3),
-    3
-  );
-  instancedGeometry.setAttribute("positions", positions);
   let voxelInstanceList = [];
   var dummy = new THREE.Object3D();
 
@@ -55,30 +52,35 @@ const VoxelGame = () => {
     for (let y = 0; y < voxelData[0].length; y++) {
       for (let z = 0; z < voxelData[0][0].length; z++) {
         if (voxelData[x][y][z] && !isVoxelSurrounded(x, y, z, voxelData)) {
-          voxelInstanceList.push([x, y, z]);
+          voxelInstanceList.push(voxelData[x][y][z]);
         }
       }
     }
   }
 
-  const material = new THREE.MeshStandardMaterial({
-    map: grassTexture,
-  });
-  material.receiveShadows = true;
+  for (const blockType of blockTypes) {
+    const count = voxelInstanceList.filter(
+      (voxel) => voxel.type === blockType.name
+    ).length;
 
-  const instancedMesh = new THREE.InstancedMesh(
-    instancedGeometry,
-    material,
-    voxelInstanceList.length
-  );
+    const mesh = new THREE.InstancedMesh(
+      cubeGeometry,
+      new THREE.MeshStandardMaterial({
+        map: blockType.material,
+      }),
+      count
+    );
+    setInstancedMeshPositions(mesh);
+    scene.add(mesh);
+  }
 
   function setInstancedMeshPositions(mesh) {
     for (var i = 0; i < mesh.count; i++) {
       // we add 200 units of distance (the width of the section) between each.
       dummy.position.set(
-        voxelInstanceList[i][0] * voxelSize,
-        voxelInstanceList[i][1] * voxelSize,
-        voxelInstanceList[i][2] * voxelSize
+        voxelInstanceList[i].position.x * voxelSize,
+        voxelInstanceList[i].position.y * voxelSize,
+        voxelInstanceList[i].position.z * voxelSize
       );
       dummy.updateMatrix();
 
@@ -87,8 +89,6 @@ const VoxelGame = () => {
     mesh.instanceMatrix.needsUpdate = true;
   }
 
-  setInstancedMeshPositions(instancedMesh);
-  scene.add(instancedMesh);
   // Set up the camera position and controls
   camera.position.x = -1.9;
   camera.position.y = 6.1;

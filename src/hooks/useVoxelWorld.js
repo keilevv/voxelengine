@@ -1,8 +1,9 @@
 import Noise from "noisejs";
+import { grassTexture, glassTexture, dirtTexture } from "../assets/images/textures";
 
 function useVoxelWorld(worldSizeX, worldSizeY, worldSizeZ) {
     // Initialize the noise generator
-    const noise = new Noise.Noise();
+    const noise = new Noise.Noise(Math.random());
     const frequency = 0.02;
     const amplitude = 30;
     const lacunarity = 2;
@@ -10,6 +11,12 @@ function useVoxelWorld(worldSizeX, worldSizeY, worldSizeZ) {
     // Set up a 3D array to store voxel data
 
     const voxelData = new Array(worldSizeX);
+    const blockTypes = [
+        { name: "grass", material: grassTexture, color: "#00FF00", minHeight: 10, maxHeight: 5 },
+        { name: "stone", material: glassTexture, color: "#A9A9A9", minHeight: 0, maxHeight: 8 },
+        { name: "dirt", material: dirtTexture, color: "#8B4513", minHeight: 0, maxHeight: 10 },
+        // Add more block types as needed
+    ];
 
     for (let x = 0; x < worldSizeX; x++) {
         voxelData[x] = new Array(worldSizeY);
@@ -20,10 +27,18 @@ function useVoxelWorld(worldSizeX, worldSizeY, worldSizeZ) {
                 const noiseValue = noise.simplex3(x * frequency, y * frequency, z * frequency); // Adjust the parameters as needed
                 const terrainHeight = Math.floor(noiseValue * amplitude);
 
-                if (y <= terrainHeight || y < 2) {
-                    voxelData[x][y][z] = 1;
-                } else {
-                    voxelData[x][y][z] = 0;
+                for (const blockType of blockTypes) {
+                    if (y <= terrainHeight && y <= blockType.maxHeight) {
+                        voxelData[x][y][z] = {
+                            position: { x, y, z },
+                            material: blockType.material,
+                            type: blockType.name,
+                            color: blockType.color,
+                            isWireframe: false,
+                        };
+                        // If this voxel matches a block type, break the loop to avoid further assignments
+                        break;
+                    }
                 }
             }
         }
@@ -58,7 +73,7 @@ function useVoxelWorld(worldSizeX, worldSizeY, worldSizeZ) {
 
 
 
-    return { voxelData, isVoxelSurrounded }
+    return { voxelData, isVoxelSurrounded, blockTypes }
 }
 
 export default useVoxelWorld
