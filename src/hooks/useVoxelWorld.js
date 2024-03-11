@@ -28,7 +28,7 @@ function useVoxelWorld(worldSizeX, worldSizeY, worldSizeZ) {
                 const terrainHeight = Math.floor(noiseValue * amplitude);
 
                 for (const blockType of blockTypes) {
-                    if (y <= terrainHeight && y <= blockType.maxHeight) {
+                    if (y <= terrainHeight && y <= blockType.maxHeight || y === 0) {
                         voxelData[x][y][z] = {
                             position: { x, y, z },
                             material: blockType.material,
